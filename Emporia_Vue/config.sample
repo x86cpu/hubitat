@@ -1,0 +1,11 @@
+{
+    "accounts": [
+        {
+            "name": "My House",
+            "email": "xxxx@gmail.com",
+            "password": "xxxxxxxx"
+        }
+    ],
+    "fileout": "/FULL/PATH/TO/WRITABLE/AREA/vue.json",
+    "maxpoints": "17"
+}
