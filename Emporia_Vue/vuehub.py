@@ -76,6 +76,7 @@ try:
         sys.exit(1)
 
     maxPoints=int(getConfigValue("maxpoints",17))
+    execfile=str(getConfigValue("exec",''))
 
     running = True
 
@@ -196,6 +197,8 @@ try:
                             print("{ \"account\": { \"account_name\": \"" + account['name'] + "\", \"channels\": ",file=f)
                             print(json.dumps(usageDataPoints, indent=4),file=f)
                             print(" } }",file=f)
+                        if execfile != "":
+                           os.system(execfile+" "+fileout)
                     else:
                         info('WARNing in collecting datapoints: account="{}"; points={}'.format(account['name'], len(usageDataPoints)))
 

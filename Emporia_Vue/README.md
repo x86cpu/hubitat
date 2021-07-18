@@ -36,11 +36,13 @@ The minimum configuration required to start vuehub.py is shown below.
         }
     ],
     "fileout": "/FULL/PATH/TO/WRITABLE/AREA/vue.json",
+    "exec": "/FULL/PATH/PROGRAM/TO/EXECUTE",
     "maxpoints": "17"
 }
 ```
 * **fileout** is the full file path to use.
-* **maxpoints** is the maximum number of Vue devices.  With a single account, it would be 17, one main, and up 16 circuits.
+* **maxpoints** is the maximum number of Vue devices.  With a single account, it would be 17, one main, and up 16 circuits. (default: 17)
+* **exec** a script to execute with the fileout as an arugment, after fileout is written. (not required)
 * Run the vuehub.py giving the config json as a single argument.  It can be run out of cron even every minute.
 ```crontab
 * * * * * cd /path/to/vuehub.py ; ./vuehub.py config
