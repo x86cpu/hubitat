@@ -19,8 +19,13 @@ import fcntl
 import os
 from threading import Event
 
+import pkg_resources;
+pkg_resources.require("pyemvue>=0.14.1")
+
 from pyemvue import PyEmVue
 from pyemvue.enums import Scale, Unit
+
+#print(pkg_resources.get_distribution('pyemvue').version)
 
 def lockFile(lockfile):
     fp = os.open(lockfile, os.O_CREAT | os.O_TRUNC | os.O_WRONLY)
@@ -57,6 +62,36 @@ def getConfigValue(key, defaultValue):
 if not lockFile("./.lock.pod"):
     error('already running')
     sys.exit(0)
+
+
+def extractDataPoints(device, usageDataPoints):
+    excludedChannelNumbers = ['Balance', 'TotalUsage']
+    minutesInAnHour = 60
+    secondsInAMinute = 60
+    wattsInAKw = 1000
+
+    for chanNum, chan in device.channels.items():
+        if not chanNum in excludedChannelNumbers:
+            if chan.nested_devices:
+                for gid, nestedDevice in chan.nested_devices.items():
+                    extractDataPoints(nestedDevice, usageDataPoints)
+
+            kwhUsage = chan.usage
+            if kwhUsage is not None:
+                chanName = lookupChannelName(account, chan)
+                watts = float(minutesInAnHour * wattsInAKw) * kwhUsage
+#                info('INFO: chanName="{}"; watts={}'.format(chanName, watts))
+                timestamp = stopTime
+                usageDataPoints.append(createDataPoint(account, chan.channel_num, chanName, watts, timestamp, False))
+
+            if detailedEnabled:
+                usage, usage_start_time = account['vue'].get_chart_usage(chan, detailedStartTime, stopTime, scale=Scale.SECOND.value, unit=Unit.KWH.value)
+                index = 0
+                for kwhUsage in usage:
+                    timestamp = detailedStartTime + datetime.timedelta(seconds=index)
+                    watts = float(secondsInAMinute * minutesInAnHour * wattsInAKw) * kwhUsage
+                    usageDataPoints.append(createDataPoint(account, chan.channel_num, chanName, watts, timestamp, True))
+                    index += 1
 
 startupTime = datetime.datetime.utcnow()
 try:
@@ -163,33 +198,15 @@ try:
 
             try:
                 deviceGids = list(account['deviceIdMap'].keys())
-                channels = account['vue'].get_devices_usage(deviceGids, stopTime, scale=Scale.MINUTE.value, unit=Unit.KWH.value)
-                if channels is not None:
-                    usageDataPoints = []
-                    minutesInAnHour = 60
-                    secondsInAMinute = 60
-                    wattsInAKw = 1000
-
+                usages = account['vue'].get_device_list_usage(deviceGids, stopTime, scale=Scale.MINUTE.value, unit=Unit.KWH.value)
 
 #                    usageDataPoints.append('\{ {} {}'.format( "\"account\": [ { \"account_name\": ",account['name']))
 #                    usageDataPoints.append(", \"channels\": [ { ")
 
-                    for chan in channels:
-                        kwhUsage = chan.usage
-                        if kwhUsage is not None:
-                            chanName = lookupChannelName(account, chan)
-                            watts = float(minutesInAnHour * wattsInAKw) * kwhUsage
-                            timestamp = stopTime
-                            usageDataPoints.append(createDataPoint(account, chan.channel_num, chanName, watts, timestamp, False))
-
-                        if detailedEnabled:
-                            usage, usage_start_time = account['vue'].get_chart_usage(chan, detailedStartTime, stopTime, scale=Scale.SECOND.value, unit=Unit.KWH.value)
-                            index = 0
-                            for kwhUsage in usage:
-                                timestamp = detailedStartTime + datetime.timedelta(seconds=index)
-                                watts = float(secondsInAMinute * minutesInAnHour * wattsInAKw) * kwhUsage
-                                usageDataPoints.append(createDataPoint(account, chan.channel_num, chanName, watts, timestamp, True))
-                                index += 1
+                if usages is not None:
+                    usageDataPoints = []
+                    for gid, device in usages.items():
+                        extractDataPoints(device, usageDataPoints)
 
                     info('Submitting datapoints to file; account="{}"; points={}'.format(account['name'], len(usageDataPoints)))
                     if len(usageDataPoints) <= maxPoints and len(usageDataPoints) > 1:
