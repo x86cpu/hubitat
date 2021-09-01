@@ -20,7 +20,7 @@ import os
 from threading import Event
 
 import pkg_resources;
-pkg_resources.require("pyemvue>=0.14.1")
+pkg_resources.require("pyemvue>=0.15.0")
 
 from pyemvue import PyEmVue
 from pyemvue.enums import Scale, Unit
@@ -88,10 +88,11 @@ def extractDataPoints(device, usageDataPoints):
                 usage, usage_start_time = account['vue'].get_chart_usage(chan, detailedStartTime, stopTime, scale=Scale.SECOND.value, unit=Unit.KWH.value)
                 index = 0
                 for kwhUsage in usage:
-                    timestamp = detailedStartTime + datetime.timedelta(seconds=index)
-                    watts = float(secondsInAMinute * minutesInAnHour * wattsInAKw) * kwhUsage
-                    usageDataPoints.append(createDataPoint(account, chan.channel_num, chanName, watts, timestamp, True))
-                    index += 1
+                    if kwhUsage is not None:
+                        timestamp = detailedStartTime + datetime.timedelta(seconds=index)
+                        watts = float(secondsInAMinute * minutesInAnHour * wattsInAKw) * kwhUsage
+                        usageDataPoints.append(createDataPoint(account, chan.channel_num, chanName, watts, timestamp, True))
+                        index += 1
 
 startupTime = datetime.datetime.utcnow()
 try:
