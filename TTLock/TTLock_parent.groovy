@@ -156,7 +156,7 @@ def getlocks() {
         bodyString.list.each { 
             logDebug "Device ID = ${it.lockMac}"
                 
-            devnum = it.lockId+it.lockMac
+            devnum = it.lockId + ":" + it.lockMac
             devname = it.lockAlias
 
             def isChild = containsDigit(it.lockId.toString())    

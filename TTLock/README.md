@@ -16,7 +16,7 @@ https://euopen.ttlock.com/CreateApplication
 ```
 - The application needs to be reviewed (hours to days). After it is approved, all the APIs are available.
 
-4. Install `TTLock_parent.groovy` and `TLock_child.groovy` files.
+4. Install `TTLock_parent.groovy` and `TTLock_child.groovy` files.
 
 5. From your Application details, retrieve your `client_id` and `client_secret` (click ***View***)
 
