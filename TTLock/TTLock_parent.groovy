@@ -177,7 +177,7 @@ def getlocks() {
                     logDebug "isChild = true, but no child found - Need to add!"
                     logDebug "Need a ${it.lockAlias} with id = ${it.lockMac}"
 
-                    createChildDevice(it.lockName, it.lockAlias, it.lockMac, it.lockId, it.hasGateway.asBoolean())
+                    createChildDevice(it.lockName, it.lockAlias, devnum, it.lockId, it.hasGateway.asBoolean())
                     //find child after update
                     childDevices.each {
                         try {
