@@ -9,7 +9,7 @@
       "id": "7b711e2a-4fea-4dae-b83d-981aaad7242f",
       "name": "TTLock App",
       "namespace": "x86cpu",
-      "location": "https://github.com/x86cpu/hubitat/raw/main/TTLock/TTLock_app.groovy",
+      "location": "https://raw.githubusercontent.com/x86cpu/hubitat/main/TTLock/TTLock_app.groovy",
       "required": false,
       "oauth": true,
       "primary": false
@@ -20,14 +20,14 @@
       "id": "fda8d7c7-95ef-4e87-81a2-37c4e63b3941",
       "name": "TTLock",
       "namespace": "x86cpu",
-      "location": "https://github.com/x86cpu/hubitat/raw/main/TTLock/TTLock_parent.groovy",
+      "location": "https://raw.githubusercontent.com/x86cpu/hubitat/main/TTLock/TTLock_parent.groovy",
       "required": true
     },
     {
       "id": "bfc4bbac-0426-4693-92b6-10f949360393",
       "name": "TTLock Child",
       "namespace": "x86cpu",
-      "location": "https://github.com/x86cpu/hubitat/raw/main/TTLock/TTLock_child.groovy",
+      "location": "https://raw.githubusercontent.com/x86cpu/hubitat/main/TTLock/TTLock_child.groovy",
       "required": false
     }
   ]

@@ -1,0 +1,17 @@
+{
+  "author": "Eric Meddaugh",
+  "gitHubUrl": "https://www.paypal.com/donate/?hosted_button_id=V3K2KVP22ERQS",
+  "packages": [
+    {
+      "id": "5705c2fe-6587-4d41-a8b7-db583bb04244",
+      "name": "TTLock",
+      "category": "Security",
+      "location": "https://raw.githubusercontent.com/x86cpu/hubitat/main/TTLock/packageManifest.json",
+      "description": "TTLock",
+      "tags": [
+        "Locks",
+        "Safety & Security"
+      ]
+    }
+  ]
+}
