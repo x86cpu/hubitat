@@ -24,8 +24,9 @@ metadata {
     definition(name: "TTLock", namespace: "x86cpu", author: "Eric Meddaugh", importUrl: "https://raw.githubusercontent.com/x86cpu/hubitat/main/TTLock/TTLock_parent.groovy") {
         capability "Polling"
 //        command "refreshtoken"
-//        command "getlocks"
-//        command "deleteAllChildDevices"
+        command "getlocks"
+        command "login"
+        command "deleteAllChildDevices"
     }
     preferences {
         section("Settings") {
@@ -41,18 +42,20 @@ metadata {
 
 def updated() {
     log.info 'Preferences saved.'
-    log.info 'debug logging is: ' + logDebug
-    log.info 'description logging is: ' + logDetails
+    log.info 'debug logging is: ' + logEnable
     log.info 'TTLock username: ' + username
 
     // Disable high levels of logging after time
     if (logEnable) runIn(1800,disableDebug)
     if (!username.isEmpty() && !password.isEmpty() && !id.isEmpty() && !secret.isEmpty()) login()
+    if ( settings.pollInt > 0 ) {
+        return poll()
+    }
 }
 
 
 def initialize() {
-    if ( settings.pollInt > 5 ) {
+    if ( settings.pollInt > 0 ) {
         return poll()
     }
     return
@@ -65,7 +68,7 @@ def logsOff() {
 
 // polling.poll 
 def poll() {
-    if (logEnable) log.debug "poll()"
+    logDebug "poll()"
     return refresh()
 }
 
@@ -139,6 +142,7 @@ private refreshtoken() {
 }
 
 def getlocks() {
+    logDebug("START getlocks()")
     input_values = [
         clientId: id,
         accessToken: state.access_token,
@@ -150,60 +154,59 @@ def getlocks() {
     bodyString = doHttpRequest('GET', '/v3/lock/list', input_values)
                
     if (bodyString) {
-        logDebug "msg= ${reply}"
+        logDebug "bodyString= ${bodyString}"
     }  
-    for (item in bodyString) {
-        bodyString.list.each { 
-            logDebug "Device ID = ${it.lockMac}"
+    bodyString.list.each { 
+        logDebug "Device ID = ${it.lockMac}"
                 
-            devnum = it.lockId + ":" + it.lockMac
-            devname = it.lockAlias
+        devnum = it.lockId + ":" + it.lockMac
+        devname = it.lockAlias
 
-            def isChild = containsDigit(it.lockId.toString())    
-            def childDevice = null
-            try {
+        def isChild = containsDigit(it.lockId.toString())    
+        def childDevice = null
+        try {
+            childDevices.each {
+                try {
+                    if (it.deviceNetworkId == devnum) {
+                        childDevice = it
+                        logDebug "Found a match!!!"
+                    }
+                }
+                catch (e) {
+                    log.error e
+                }
+            }
+            if (childDevice == null) {
+                logDebug "isChild = true, but no child found - Need to add!"
+                logDebug "Need a ${it.lockAlias} with id = ${devnum}"
+
+                createChildDevice(it.lockName, it.lockAlias, devnum, it.lockId, it.hasGateway.asBoolean())
+                //find child after update
                 childDevices.each {
                     try {
                         if (it.deviceNetworkId == devnum) {
                             childDevice = it
-                            logDebug "Found a match!!!"
+                            logDebug "Found a created match!!!"
+                            childDevice.sendEvent(name: 'lock', value: "unknown")
+                            childDevice.sendEvent(name: 'battery', value: it.electricQuantity)                                
                         }
                     }
                     catch (e) {
                         log.error e
                     }
                 }
-                if (childDevice == null) {
-                    logDebug "isChild = true, but no child found - Need to add!"
-                    logDebug "Need a ${it.lockAlias} with id = ${devnum}"
-
-                    createChildDevice(it.lockName, it.lockAlias, devnum, it.lockId, it.hasGateway.asBoolean())
-                    //find child after update
-                    childDevices.each {
-                        try {
-                            if (it.deviceNetworkId == devnum) {
-                                childDevice = it
-                                logDebug "Found a created match!!!"
-                            }
-                        }
-                        catch (e) {
-                            log.error e
-                        }
-                    }
-                }
-                if (childDevice != null) {
-                    childDevice.sendEvent(name: 'lock', value: "unknown")
-                    childDevice.sendEvent(name: 'battery', value: it.electricQuantity)
-                    childDevice.refresh()
-                    logDebug "ID: "+childDevice.getDataValue("id")
-                    logDebug "${childDevice.id} - name: ${it.lockAlias}"
-                }
-            }                     
-            catch (e) {
-                log.error "Error in parse(), error = ${e}"
-            }       
-        }
-    }         
+            }
+            if (childDevice != null) {
+                childDevice.refresh()
+                logDebug "ID: "+childDevice.getDataValue("id")
+                logDebug "${childDevice.id} - name: ${it.lockAlias}"
+            }
+        }                     
+        catch (e) {
+            log.error "Error in parse(), error = ${e}"
+        }       
+    }
+    logDebug("END getlocks()")
 }
 
 private void createChildDevice(String deviceName, String deviceLabel, String deviceNumber, Integer lockId, Boolean gw) {
@@ -215,9 +218,9 @@ private void createChildDevice(String deviceName, String deviceLabel, String dev
         if (deviceHandlerName != "") {
             addChildDevice(deviceHandlerName, "${deviceNumber}",[
             	label: "${deviceLabel}",
-            	name: "${deviceName}",
-		id: "${lockId}",
-		gw: "${gw}",
+               	name: "${deviceName}",
+	        	id: "${lockId}",
+	        	gw: "${gw}",
             ])
         }
     } catch (e) {
@@ -242,11 +245,12 @@ private doHttpRequest(String method, String path, Map body = [:]) {
     params = [
         uri: baseURL(),
         path: path,
+        timeout: 20,
         headers: ['User-Agent': driverUserAgent()],
     ]
 
     if (method == 'POST' && body.isEmpty() == false) {
-        params.headers['Content-Type'] = "application/x-www-form-urlencoded"
+        params.requestContentType = "application/x-www-form-urlencoded"
         params.body = urlEncodeMap(body)    
     }
     if (method == 'GET' ) {
@@ -255,12 +259,18 @@ private doHttpRequest(String method, String path, Map body = [:]) {
     logDebug(params)
 
     Closure $parseResponse = { response ->
-        if (logEnable) log.trace response.data
-        if (logEnable) log.debug "HTTPS ${method} ${path} results: ${response.status}"
+        logDebug(response.data)
+        logDebug("HTTPS ${method} ${path} results: ${response.status}")
         status = response.status.toString()
         result = response.data
         if (result.errcode == 10004) refreshtoken()  // relogin
+        if (result.errcode == -3003) { // GW Busy
+            logDebug(status)
+            wait (2)
+            return 
+        }
         message = result?.message ?: "${method} ${path} successful"
+        logDebug("MESSAGE: ${message}")
     }
 
     try {
@@ -280,11 +290,13 @@ private doHttpRequest(String method, String path, Map body = [:]) {
         }
     } catch(error) {
         // Is this an HTTP error or a different exception?
+        logDebug("Caught ERROR")
         if (error.metaClass.respondsTo(error, 'response')) {
-            if (logEnable) log.trace error.response.data
+            logDebug(error.response.data)
             status = error.response.status?.toString()
             result = error.response.data
-            if (result.errcode == 10004) refreshtoken()  // relogin        
+            if (result.errcode == 10004) refreshtoken()  // relogin
+            if (result.errcode == -3003) return  // GW busy
             message = error.response.data?.message ?:  "${method} ${path} failed"
             log.error "HTTPS ${method} ${path} result: ${error.response.status} ${error.response.data?.message}"
             error.response.data?.errors?.each() { errormsg ->

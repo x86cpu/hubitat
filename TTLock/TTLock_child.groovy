@@ -34,17 +34,6 @@ def installed() {
     updated()
 }
 
-def parse(String locked,mytime) {
-    logDebug "parse(${value}) called"
-    if (value) {
-        float tmpValue = Float.parseFloat(value).round(1)
-        // sendEvent(name: 'lock', value: , unit: 'Watts')
-        state.lastReport = mytime
-    } else {
-        log.error "Missing value.  Cannot parse!"
-    }
-}
-
 def dumpstate() {
     logDebug "parent token: "+parent.getVar("access_token")
     logDebug "my id: "+getDataValue("id")
@@ -63,7 +52,12 @@ def lock() {
     reply = parent.doHttpRequest('POST', '/v3/lock/lock', input_values)
     if (reply.containsKey('errcode')) {
         logDebug("errcode is ${reply.errcode}")
-        if (reply.errcode == 0) sendEvent(name: 'lock', value: "locked")
+        if (reply.errcode == 0) {
+            sendEvent(name: 'lock', value: "locked")
+            log.info ("lock locked")
+        } else {
+            log.error ("lock failed: ${reply.errcode}")
+        }
     }
 }
 
@@ -80,7 +74,12 @@ def unlock() {
     reply = parent.doHttpRequest('POST', '/v3/lock/unlock', input_values)
     if (reply.containsKey('errcode')) {
         logDebug("errcode is ${reply.errcode}")
-        if (reply.errcode == 0) sendEvent(name: 'lock', value: "unlocked")
+        if (reply.errcode == 0) {
+            sendEvent(name: 'lock', value: "unlocked")
+            log.info ("lock unlocked")
+        } else {
+            log.error ("unlock failed: ${reply.errcode}")
+        }
     }
 }
 
@@ -97,12 +96,12 @@ def refresh() {
     logDebug(parent.urlEncodeMap(input_values))
     reply = parent.doHttpRequest('GET', '/v3/lock/queryOpenState', input_values)
     if (reply.containsKey('state')) {
-    logDebug("state is ${reply.state}")
+        logDebug("state is ${reply.state}")
         if (reply.state == 0) sendEvent(name: 'lock', value: "locked")
         if (reply.state == 1) sendEvent(name: 'lock', value: "unlocked")
         if (reply.state == 2) sendEvent(name: 'lock', value: "unknown")
     }
-
+    
     input_values = [
         clientId: state.clientid,
         accessToken: state.token,
