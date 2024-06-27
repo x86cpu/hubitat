@@ -7,7 +7,7 @@
       "name": "TTLock",
       "category": "Security",
       "location": "https://raw.githubusercontent.com/x86cpu/hubitat/main/TTLock/packageManifest.json",
-      "description": "TTLock",
+      "description": "TTLock locks integrations",
       "tags": [
         "Locks",
         "Safety & Security"
