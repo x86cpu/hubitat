@@ -12,6 +12,13 @@
         "Locks",
         "Safety & Security"
       ]
+    },
+    {
+      "id": "667d0b76-5e14-4d0b-903c-0c34f2c9389c",
+      "name": "Abode Alarm 2024",
+      "category": "Security",
+      "location": "https://raw.githubusercontent.com/x86cpu/hubitat-abode/master/packageManifest.json",
+      "description": "Realtime management and tracking of an Abode Alarm system (2024 update) with child devices."
     }
   ]
 }
