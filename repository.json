@@ -18,7 +18,12 @@
       "name": "Abode Alarm 2024",
       "category": "Security",
       "location": "https://raw.githubusercontent.com/x86cpu/hubitat-abode/master/packageManifest.json",
-      "description": "Realtime management and tracking of an Abode Alarm system (2024 update) with child devices."
+      "description": "Realtime management and tracking of an Abode Alarm system (2024 update) with child devices.",
+      "tags": [
+        "Alarm Systems",
+        "Monitoring",
+        "Safety & Security"
+      ]
     }
   ]
 }
